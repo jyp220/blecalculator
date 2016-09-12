@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context="com.hatiolab.blecalculator.MainActivity">
+
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_weight="1"
+        android:id="@+id/listView"
+        android:layout_height="wrap_content">
+    </ListView>
+    
+    <TextView 
+        android:id="@+id/location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="null"/>
+    
+    <TextView 
+        android:id="@+id/accelerometer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="accelerometer"/>
+    
+    <TextView 
+        android:id="@+id/firebase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="firebase"/>
+    
+    <TextView 
+        android:id="@+id/uuid"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="uuid"/>
+
+    <Button
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="SCANNING"
+        android:id="@+id/button" />
+
+
+</LinearLayout>
