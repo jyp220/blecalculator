@@ -1,3 +1,19 @@
 <resources>
     <string name="app_name">Ble Calculator</string>
+    
+     <string-array name="type_array">
+        <item>person</item>
+        <item>fork_lift</item>
+        <item>etc</item>
+    </string-array>
+    
+     <string-array name = "interval_array">
+     	<item>0.5second</item>
+     	<item>1.0second</item>
+     	<item>1.5second</item>
+     	<item>2.0second</item>
+     	<item>2.5second</item>
+         
+     </string-array>
+     
 </resources>

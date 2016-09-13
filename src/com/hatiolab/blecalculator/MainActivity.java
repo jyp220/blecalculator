@@ -150,7 +150,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 		lastUpdate = System.currentTimeMillis();
 
         madgwickTimer.scheduleAtFixedRate(new DoMadgwick(),
-                1000, 100);
+                1000, 1000);
 		
 	}
 	
