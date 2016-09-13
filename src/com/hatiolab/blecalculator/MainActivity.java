@@ -2,6 +2,8 @@ package com.hatiolab.blecalculator;
 
 import java.util.UUID;
 
+import com.firebase.client.Firebase;
+
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -16,13 +18,13 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.telephony.TelephonyManager;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.firebase.client.Firebase;
 
 public class MainActivity extends Activity implements SensorEventListener {
 	boolean scanning = false;
@@ -36,6 +38,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 	// 블루투스를 스켄하거나, 페어링된장치목록을 읽어들일 수 있습니다.
 	// 이를 바탕으로 블루투스와의 연결을 시도할 수 있습니다.
 	
+	String dataScene;
+	String dataType;
+	String dataInterval;
 	
   
     private SensorManager mSensorManager;
@@ -50,7 +55,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 	}
 
 	Button button;// 버튼
-	TextView location, accelerometer, firebase, uuid;
+	TextView location, accelerometer, firebase, uuid, tvSettingValue;
 
 	ListView listView;// 리스트뷰 객체
 	BleList bleList = null;// 리스트 어댑터
@@ -62,6 +67,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 		
 		Firebase.setAndroidContext(this);
 		
+		initSetting();		
+			
 		ActivityCompat.requestPermissions(this,
 				new String[] { Manifest.permission.BLUETOOTH }, 1);
 
@@ -110,7 +117,8 @@ public class MainActivity extends Activity implements SensorEventListener {
 			}
 		});
 		
-		sceneFirebase = new SceneFirebase("260", firebase);
+		// 상수가 아닌 Intent로 받아온 Scene 값을 입력
+		sceneFirebase = new SceneFirebase(dataScene, firebase);
 		uuid.setText(getDevicesUUID(MainActivity.this));
 	}
 	
@@ -203,4 +211,40 @@ public class MainActivity extends Activity implements SensorEventListener {
         String deviceId = deviceUuid.toString();
         return deviceId;
     }
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_settings) {
+			Intent i = new Intent(getApplicationContext(), Setting.class);
+			startActivity(i);
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+	
+	public void initSetting(){
+			
+		// Setting 엑티비티에서 넘어온 값들을 출력
+		
+		Intent i = getIntent();
+		dataScene = i.getExtras().getString("scene");
+		dataType = i.getExtras().getString("type");
+		dataInterval= i.getExtras().getString("interval");
+		
+		tvSettingValue = (TextView)findViewById(R.id.tv_setting_value);
+		tvSettingValue.setText("Scene : " + dataScene + 
+				 			 "\n Type : " + dataType +
+				 			 "\n Interval : " + dataInterval);
+	}
 }

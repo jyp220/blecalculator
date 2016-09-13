@@ -5,13 +5,19 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     tools:context="com.hatiolab.blecalculator.MainActivity">
-
+     
     <ListView
         android:layout_width="match_parent"
         android:layout_weight="1"
         android:id="@+id/listView"
         android:layout_height="wrap_content">
     </ListView>
+    
+    <TextView 
+        android:id="@+id/tv_setting_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="setting value = null"/>
     
     <TextView 
         android:id="@+id/location"
