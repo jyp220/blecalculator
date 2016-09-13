@@ -1,5 +1,7 @@
 package com.hatiolab.blecalculator;
 
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 import android.Manifest;
@@ -22,7 +24,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.androidplot.xy.SimpleXYSeries;
 import com.firebase.client.Firebase;
+import com.hatiolab.blecalculator.madgwickAHRS.MadgwickAHRS;
 
 public class MainActivity extends Activity implements SensorEventListener {
 	boolean scanning = false;
@@ -39,8 +43,22 @@ public class MainActivity extends Activity implements SensorEventListener {
 	
   
     private SensorManager mSensorManager;
-    private Sensor mGyroscope;
-    private Sensor accSensor;
+    private Sensor accSensor, gyroSensor, magSensor;
+    private long lastUpdate;
+    
+    
+    SimpleXYSeries seriesAccx;
+    SimpleXYSeries seriesAccy;
+    SimpleXYSeries seriesAccz;
+    private static final int HISTORY_SIZE = 500;
+    
+    private float[] gyro = new float[3];
+    private float[] magnet = new float[3];
+    private float[] accel = new float[3];
+    
+    MadgwickAHRS madgwickAHRS = new MadgwickAHRS(0.01f, 0.041f);
+    private Timer madgwickTimer = new Timer();
+    double lpPitch=0,lpRpll=0,lpYaw=0;
     
     private SceneFirebase sceneFirebase;
 
@@ -50,7 +68,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 	}
 
 	Button button;// 버튼
-	TextView location, accelerometer, firebase, uuid;
+	TextView location, accelerometer, firebase, uuid, madgPitch, madgRoll, madgYaw;
 
 	ListView listView;// 리스트뷰 객체
 	BleList bleList = null;// 리스트 어댑터
@@ -78,14 +96,22 @@ public class MainActivity extends Activity implements SensorEventListener {
 		//센서 매니저 얻기
         mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         //자이로스코프 센서(회전)
-        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        gyroSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         //엑셀러로미터 센서(가속)
         accSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        
+        mSensorManager.registerListener(this, accSensor, 0);//every 5ms
+        mSensorManager.registerListener(this, gyroSensor, 0);
+        mSensorManager.registerListener(this, magSensor, 0);
         
 		location = (TextView) findViewById(R.id.location);
 		accelerometer = (TextView) findViewById(R.id.accelerometer);
 		firebase = (TextView) findViewById(R.id.firebase);
 		uuid = (TextView) findViewById(R.id.uuid);
+		madgPitch = (TextView) findViewById(R.id.madgPitch);
+		madgRoll = (TextView) findViewById(R.id.madgRoll);
+		madgYaw = (TextView) findViewById(R.id.madgYaw);
 
 		// 리스트뷰 설정
 		bleList = new BleList(MainActivity.this, location);
@@ -112,6 +138,20 @@ public class MainActivity extends Activity implements SensorEventListener {
 		
 		sceneFirebase = new SceneFirebase("260", firebase);
 		uuid.setText(getDevicesUUID(MainActivity.this));
+		
+		
+		seriesAccx = new SimpleXYSeries("accx");
+        seriesAccx.useImplicitXVals();
+        seriesAccy = new SimpleXYSeries("accy");
+        seriesAccy.useImplicitXVals();
+        seriesAccz = new SimpleXYSeries("accz");
+        seriesAccz.useImplicitXVals();
+		
+		lastUpdate = System.currentTimeMillis();
+
+        madgwickTimer.scheduleAtFixedRate(new DoMadgwick(),
+                1000, 100);
+		
 	}
 	
 	//정확도에 대한 메소드 호출 (사용안함)
@@ -121,19 +161,17 @@ public class MainActivity extends Activity implements SensorEventListener {
       
       
     //센서값 얻어오기
-    public void onSensorChanged(SensorEvent event) {
-        Sensor sensor = event.sensor;
-  
-        if (sensor.getType() == Sensor.TYPE_GYROSCOPE) {
-              
+    public void onSensorChanged(SensorEvent sensorEvent) {
+    	if (sensorEvent.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(sensorEvent.values, 0, accel, 0, 3);
+        } else if (sensorEvent.sensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            System.arraycopy(sensorEvent.values, 0, gyro, 0, 3);
+
+        } else if (sensorEvent.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(sensorEvent.values, 0, magnet, 0, 3);
+
         }
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-        	double xAxis = Util.decimalScale(String.valueOf(event.values[0]), 3);
-        	double yAxis = Util.decimalScale(String.valueOf(event.values[1]), 3);
-        	double zAxis = Util.decimalScale(String.valueOf(event.values[2]), 3);
-            
-            accelerometer.setText("xAxis : " + xAxis + " / yAxis : " + yAxis + " / zAxis : " + zAxis);
-        }
+        
     }
   
     // 주기 설명
@@ -146,8 +184,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     //리스너 등록
     protected void onResume() {
         super.onResume();
-        mSensorManager.registerListener(this, mGyroscope,SensorManager.SENSOR_DELAY_UI);
-        mSensorManager.registerListener(this, accSensor,SensorManager.SENSOR_DELAY_UI);
+        mSensorManager.registerListener(this, gyroSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, accSensor,SensorManager.SENSOR_DELAY_FASTEST);
+        mSensorManager.registerListener(this, magSensor,SensorManager.SENSOR_DELAY_GAME);
     }
       
     //리스너 해제
@@ -203,4 +242,43 @@ public class MainActivity extends Activity implements SensorEventListener {
         String deviceId = deviceUuid.toString();
         return deviceId;
     }
+	
+	class DoMadgwick extends TimerTask {
+
+		public void run() {
+			Long now = System.currentTimeMillis();
+			madgwickAHRS.SamplePeriod = (now - lastUpdate) / 1000.0f;
+			lastUpdate = now;
+			madgwickAHRS.Update(gyro[0], gyro[1], gyro[2], accel[0], accel[1],
+					accel[2], magnet[0], magnet[1], magnet[2]);
+			if (seriesAccx.size() > HISTORY_SIZE) {
+				seriesAccx.removeFirst();
+				seriesAccy.removeFirst();
+				seriesAccz.removeFirst();
+			}
+
+			// add the latest history sample:
+			lpPitch = lpPitch * 0.2 + madgwickAHRS.MadgPitch * 0.8;
+			lpRpll = lpRpll * 0.2 + madgwickAHRS.MadgRoll * 0.8;
+			lpYaw = lpYaw * 0.2 + madgwickAHRS.MadgYaw * 0.8;
+			seriesAccx.addLast(null, lpPitch);
+			seriesAccy.addLast(null, lpRpll);
+			seriesAccz.addLast(null, lpYaw);
+			try {
+				// Activity에서만 가능함.
+				runOnUiThread(new Runnable() {
+					public void run() {
+						madgPitch.setText(Double
+								.toString(Math.toRadians(madgwickAHRS.MadgPitch)));
+						madgRoll.setText(Double.toString(Math.toRadians(madgwickAHRS.MadgRoll)));
+						madgYaw.setText(Double.toString(Math.toRadians(madgwickAHRS.MadgYaw)));
+					}
+				});
+				
+				sceneFirebase.setValue(Math.toRadians(madgwickAHRS.MadgPitch), Math.toRadians(madgwickAHRS.MadgRoll), Math.toRadians(madgwickAHRS.MadgYaw));
+			} catch (Exception e) {
+			}
+		}
+
+	}
 }

@@ -36,6 +36,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="uuid"/>
+    
+    <TextView 
+        android:id="@+id/madgPitch"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MadgPitch"/>
+    
+    <TextView 
+        android:id="@+id/madgRoll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MadgRoll"/>
+    
+    <TextView 
+        android:id="@+id/madgYaw"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="MadgYaw"/>
 
     <Button
         android:layout_width="match_parent"

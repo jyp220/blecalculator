@@ -1,5 +1,6 @@
 package com.hatiolab.blecalculator;
 
+import android.util.Log;
 import android.widget.TextView;
 
 import com.firebase.client.DataSnapshot;
@@ -24,5 +25,19 @@ public class SceneFirebase {
 	           }
 	           @Override public void onCancelled(FirebaseError error) { }
 	      });
+	}
+	
+	public void setValue(double pitch, double roll, double yaw) {
+//		myFirebaseRef.child("260").child("locations").child("aaaaa").child("lastUpdateTime").setValue(System.currentTimeMillis());
+//		
+////		myFirebaseRef.child("260").child("locations").child("aaaaa").child("props").child("pitch").setValue(pitch);
+////		myFirebaseRef.child("260").child("locations").child("aaaaa").child("props").child("roll").setValue(roll);
+//		myFirebaseRef.child("260").child("locations").child("aaaaa").child("props").child("yaw").setValue(yaw);
+		
+		myFirebaseRef.child("260").child("locations").child("bbbbb").child("lastUpdateTime").setValue(System.currentTimeMillis());
+		
+		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("pitch").setValue(pitch);
+//		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("roll").setValue(roll);
+//		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("yaw").setValue(yaw);
 	}
 }
