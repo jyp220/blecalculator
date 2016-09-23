@@ -1,8 +1,5 @@
 package com.hatiolab.blecalculator;
 
-import android.util.Log;
-import android.widget.TextView;
-
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
@@ -11,7 +8,7 @@ import com.firebase.client.ValueEventListener;
 public class SceneFirebase {
 	private Firebase myFirebaseRef;
 	
-	public SceneFirebase(String childName, final TextView textView) {
+	public SceneFirebase(String childName) {
 		
 		myFirebaseRef = new Firebase("https://bluetoothscan.firebaseio.com/");
 		
@@ -20,7 +17,6 @@ public class SceneFirebase {
 	           public void onDataChange(DataSnapshot snapshot) {
 	        	   if(snapshot.getValue() != null) {
 		        	   String text = snapshot.getValue().toString();
-		        	   textView.setText(text);
 	        	   }
 	           }
 	           @Override public void onCancelled(FirebaseError error) { }
@@ -39,5 +35,11 @@ public class SceneFirebase {
 //		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("pitch").setValue(pitch);
 ////		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("roll").setValue(roll);
 ////		myFirebaseRef.child("260").child("locations").child("bbbbb").child("props").child("yaw").setValue(yaw);
+	}
+	
+	public void setStandardDeviation(String address, double avg, double distance, double standardDeviation) {
+		myFirebaseRef.child(address).child("average").setValue(avg);
+		myFirebaseRef.child(address).child("distance").setValue(distance);
+		myFirebaseRef.child(address).child("standardDeviation").setValue(standardDeviation);
 	}
 }

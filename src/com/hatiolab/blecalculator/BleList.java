@@ -1,6 +1,7 @@
 package com.hatiolab.blecalculator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
@@ -27,15 +28,21 @@ public class BleList extends BaseAdapter{
 	private ArrayList<Integer> RSSIs;
 	private LayoutInflater inflater;
 	private ArrayList<Beacon> beaconSetting;
+	private HashMap<String, Double> standardDeviation = new HashMap<String, Double>();
 	TextView txtLocation;
+	private SceneFirebase sceneFirebase;
+	
+	private ArrayList<HashMap<String, ArrayList<Double>>> beaconRssi;
 
-	public BleList(Context mContext, TextView location) {
+	public BleList(Context mContext, TextView location, SceneFirebase firebase) {
 		super();
 		devices = new ArrayList<BluetoothDevice>();
 		RSSIs = new ArrayList<Integer>();
 		beaconSetting = new ArrayList<Beacon>();
+		beaconRssi = new ArrayList<HashMap<String, ArrayList<Double>>>();
 		inflater = ((Activity) mContext).getLayoutInflater();
 		txtLocation = location;
+		sceneFirebase = firebase;
 	}
 
 	public void addDevice(BluetoothDevice device, int rssi, byte[] scanRecord) {
@@ -90,7 +97,42 @@ public class BleList extends BaseAdapter{
 		int rssi = RSSIs.get(position);
 		int txPower = beaconSetting.get(position).getTxPower();
 		
-		String deviceInfo = deviceName + " / " + deviceAddress + " / " + Util.decimalScale(String.valueOf(Util.calculateDistance(txPower, rssi)), 3) + " / " + txPower;
+		
+		ArrayList<Double> rssiValue = new ArrayList<Double>();
+		HashMap<String, ArrayList<Double>> addressToRssi = new HashMap<>();
+		rssiValue.add((double) rssi);
+		
+		boolean bool = true;
+		if(beaconRssi.size() > 0) {
+			for(int i = 0 ; i < beaconRssi.size() ; i++) {
+				if(beaconRssi.get(i).containsKey(deviceAddress)) {
+					beaconRssi.get(i).get(deviceAddress).add((double) rssi);
+					bool = false;
+					break;
+				}
+			}
+			
+			if(bool) {
+				addressToRssi.put(deviceAddress, rssiValue);
+				beaconRssi.add(addressToRssi);
+			}
+		} else {
+			addressToRssi.put(deviceAddress, rssiValue);
+			beaconRssi.add(addressToRssi);
+		}
+		
+		if(beaconRssi.get(position).get(deviceAddress).size() > 500) {
+			double result = Util.standardDeviation(beaconRssi.get(position).get(deviceAddress));
+			standardDeviation.put(deviceAddress, result);
+			double avg = Util.mean(beaconRssi.get(position).get(deviceAddress));
+			double distance = Util.calculateDistance(txPower, avg);
+			
+			sceneFirebase.setStandardDeviation(deviceAddress, avg, distance, result);
+			
+			beaconRssi.get(position).get(deviceAddress).clear();
+		}
+		
+		String deviceInfo = deviceName + " / " + deviceAddress + " / " + Util.decimalScale(String.valueOf(Util.calculateDistance(txPower, rssi)), 3) + " / " + txPower + "      / Length : " + beaconRssi.get(position).get(deviceAddress).size() + " / standardDeviation : " + standardDeviation.get(deviceAddress);
 		
 
 		viewHolder.deviceName.setText(deviceAddress != null && deviceAddress.length() > 0 ? deviceInfo : "알 수 없는 장치");

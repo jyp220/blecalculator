@@ -26,16 +26,22 @@
         android:text="null"/>
     
     <TextView 
+        android:id="@+id/gravity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="gravity"/>
+    
+    <TextView 
         android:id="@+id/accelerometer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="accelerometer"/>
     
     <TextView 
-        android:id="@+id/firebase"
+        android:id="@+id/standardDeviation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="firebase"/>
+        android:text="standardDeviation"/>
     
     <TextView 
         android:id="@+id/uuid"

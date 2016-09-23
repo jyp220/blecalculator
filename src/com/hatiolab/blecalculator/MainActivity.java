@@ -1,5 +1,7 @@
 package com.hatiolab.blecalculator;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
@@ -56,6 +58,10 @@ public class MainActivity extends Activity implements SensorEventListener {
     private float[] magnet = new float[3];
     private float[] accel = new float[3];
     
+    DecimalFormat m_format;
+    private float[] gravity_data = new float[3];
+    private float[] linear_acceleration = new float[3];
+    
     MadgwickAHRS madgwickAHRS = new MadgwickAHRS(0.01f, 0.041f);
     private Timer madgwickTimer = new Timer();
     double lpPitch=0,lpRpll=0,lpYaw=0;
@@ -68,7 +74,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 	}
 
 	Button button;// 버튼
-	TextView location, accelerometer, firebase, uuid, madgPitch, madgRoll, madgYaw;
+	TextView location, accelerometer, uuid, madgPitch, madgRoll, madgYaw, tvStandardDeviation, gravity;
 
 	ListView listView;// 리스트뷰 객체
 	BleList bleList = null;// 리스트 어댑터
@@ -105,16 +111,21 @@ public class MainActivity extends Activity implements SensorEventListener {
         mSensorManager.registerListener(this, gyroSensor, 0);
         mSensorManager.registerListener(this, magSensor, 0);
         
+        m_format = new DecimalFormat();
+        m_format.applyLocalizedPattern("0.##");
+        
 		location = (TextView) findViewById(R.id.location);
 		accelerometer = (TextView) findViewById(R.id.accelerometer);
-		firebase = (TextView) findViewById(R.id.firebase);
+		gravity = (TextView) findViewById(R.id.gravity);
+		tvStandardDeviation = (TextView) findViewById(R.id.standardDeviation);
 		uuid = (TextView) findViewById(R.id.uuid);
 		madgPitch = (TextView) findViewById(R.id.madgPitch);
 		madgRoll = (TextView) findViewById(R.id.madgRoll);
 		madgYaw = (TextView) findViewById(R.id.madgYaw);
 
+		sceneFirebase = new SceneFirebase("260");
 		// 리스트뷰 설정
-		bleList = new BleList(MainActivity.this, location);
+		bleList = new BleList(MainActivity.this, location, sceneFirebase);
 		listView = (ListView) findViewById(R.id.listView);
 		listView.setAdapter(bleList);
 
@@ -132,11 +143,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 					bleList.notifyDataSetChanged();
 				}
 				scanning = !scanning;
-
 			}
 		});
 		
-		sceneFirebase = new SceneFirebase("260", firebase);
 		uuid.setText(getDevicesUUID(MainActivity.this));
 		
 		
@@ -149,9 +158,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 		
 		lastUpdate = System.currentTimeMillis();
 
-        madgwickTimer.scheduleAtFixedRate(new DoMadgwick(),
-                1000, 100);
-		
+        madgwickTimer.scheduleAtFixedRate(new DoMadgwick(), 1000, 1000);
 	}
 	
 	//정확도에 대한 메소드 호출 (사용안함)
@@ -265,20 +272,34 @@ public class MainActivity extends Activity implements SensorEventListener {
 			seriesAccy.addLast(null, lpRpll);
 			seriesAccz.addLast(null, lpYaw);
 			try {
-				// Activity에서만 가능함.
 				runOnUiThread(new Runnable() {
 					public void run() {
 						madgPitch.setText(Double
 								.toString(Math.toRadians(madgwickAHRS.MadgPitch)));
 						madgRoll.setText(Double.toString(Math.toRadians(madgwickAHRS.MadgRoll)));
 						madgYaw.setText(Double.toString(Math.toRadians(madgwickAHRS.MadgYaw)));
+						
+						final float alpha = (float) 0.8;
+			            
+			            gravity_data[0] = alpha * gravity_data[0] + (1 - alpha) * accel[0];
+			            gravity_data[1] = alpha * gravity_data[1] + (1 - alpha) * accel[1];
+			            gravity_data[2] = alpha * gravity_data[2] + (1 - alpha) * accel[2];
+			            
+			            
+			            linear_acceleration[0] = accel[0] - gravity_data[0];
+			            linear_acceleration[1] = accel[1] - gravity_data[1];
+			            linear_acceleration[2] = accel[2] - gravity_data[2];
+			            
+			            gravity.setText("X : " + m_format.format(linear_acceleration[0]) + " / Y : " + m_format.format(linear_acceleration[1]) + " / Z : " + m_format.format(linear_acceleration[2]));
+			            accelerometer.setText("X : " + m_format.format(accel[0]) + " / Y : " + m_format.format(accel[1]) + " / Z : " + m_format.format(accel[2]));
+			            
+			            Math.atan(linear_acceleration[1] / linear_acceleration[0]);
 					}
 				});
 				
-				sceneFirebase.setValue(Math.toRadians(madgwickAHRS.MadgPitch), Math.toRadians(madgwickAHRS.MadgRoll), Math.toRadians(madgwickAHRS.MadgYaw));
+//				sceneFirebase.setValue(Math.toRadians(madgwickAHRS.MadgPitch), Math.toRadians(madgwickAHRS.MadgRoll), Math.toRadians(madgwickAHRS.MadgYaw));
 			} catch (Exception e) {
 			}
 		}
-
 	}
 }
