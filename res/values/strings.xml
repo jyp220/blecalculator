@@ -16,4 +16,7 @@
          
      </string-array>
      
+     <string name="try_connect">Try Connecting&#8230;</string>
+     <string name="loading">Loading</string>
+     
 </resources>

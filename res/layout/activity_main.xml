@@ -13,19 +13,19 @@
         android:layout_height="wrap_content">
     </ListView>
     
-    <TextView 
+    <!-- <TextView 
         android:id="@+id/tv_setting_value"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="setting value = null"/>
+        android:text="setting value = null"/> -->
     
     <TextView 
         android:id="@+id/location"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="null"/>
+        android:text="location"/>
     
-    <TextView 
+    <!-- <TextView 
         android:id="@+id/gravity"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -65,7 +65,7 @@
         android:id="@+id/madgYaw"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="MadgYaw"/>
+        android:text="MadgYaw"/> -->
 
     <Button
         android:layout_width="match_parent"
